@@ -1,3 +1,6 @@
 [submodule "winter"]
 	path = winter
 	url = https://github.com/LeFrosch/winter.git
+[submodule "libgit2"]
+	path = libgit2
+	url = https://github.com/libgit2/libgit2.git
