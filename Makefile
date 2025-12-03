@@ -54,6 +54,6 @@ clean:
 	rm -rf build test libgit2/build
 
 format:
-	find . -type f \( -name "*.c" -o -name "*.h" \) | xargs $(FORMAT) -i
+	$(FORMAT) -i $(SRCS) $(HDRS)
 
 .PHONY: clean format
