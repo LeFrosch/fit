@@ -1,7 +1,7 @@
 CC     := clang
 CMAKE  := cmake
 FORMAT := clang-format
-CFLAGS := -Wall -Wextra -Werror -std=c23 -O3 -Ilibgit2/include
+CFLAGS := -Wall -Wextra -Werror -std=c23 -O3 -Ilibgit2/include -Iinclude
 
 include winter/module.mk
 
@@ -15,7 +15,7 @@ else
     $(error unsupported platform)
 endif
 
-SRCS := $(WINTER_SRCS)
+SRCS := $(addprefix src/, uuid.c core.c) $(WINTER_SRCS)
 HDRS := $(wildcard include/**/*.h) $(WINTER_HDRS)
 
 REL_OBJS  := $(SRCS:%.c=build/rel/%.o)
@@ -26,7 +26,7 @@ LIBGIT2 := libgit2/build/libgit2.a
 
 $(LIBGIT2): libgit2/CMakeLists.txt
 	@mkdir -p libgit2/build 
-	cd libgit2/build && cmake .. -G "Unix Makefiles" -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release -DUSE_SSH=OFF
+	cd libgit2/build && cmake .. -G "Unix Makefiles" -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Debug -DUSE_SSH=OFF
 	$(MAKE) -C libgit2/build libgit2package
 
 build/rel/%.o: %.c $(HDRS)
@@ -41,7 +41,7 @@ build/test/%.o: %.c $(HDRS)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(WINTER_TEST_CFLAGS) -c -o $@ $<
 
-main: $(REL_OBJS) $(LIBGIT2) build/deb/src/main.o
+main: $(REL_OBJS) $(LIBGIT2) build/rel/src/main.o
 	$(CC) $(LD_FLAGS) $^ -o $@
 
 debug: $(DEB_OBJS) $(LIBGIT2) build/deb/src/main.o
@@ -55,5 +55,7 @@ clean:
 
 format:
 	$(FORMAT) -i $(SRCS) $(HDRS)
+
+all: main debug test
 
 .PHONY: clean format
