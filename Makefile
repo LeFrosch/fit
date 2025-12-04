@@ -1,19 +1,12 @@
 CC     := clang
 CMAKE  := cmake
 FORMAT := clang-format
-CFLAGS := -Wall -Wextra -Werror -std=c23 -O3 -Ilibgit2/include -Iinclude
+CFLAGS := -Wall -Wextra -Werror -std=c23 -O3 -Iinclude
 
 include winter/module.mk
+include vendor/module.mk
 
-CFLAGS += $(WINTER_CFLAGS)
-
-ifeq ($(UNAME), Darwin)
-	LD_FLAGS := -framework GSS -framework Security -framework CoreFoundation -lz -liconv
-else ifeq ($(UNAME), Linux)
-	LD_FLAGS := -lssl -lcrypto -lz -lpthread
-else
-    $(error unsupported platform)
-endif
+CFLAGS += $(WINTER_CFLAGS) $(VENDOR_CFLAGS)
 
 SRCS := $(addprefix src/, uuid.c core.c) $(WINTER_SRCS)
 HDRS := $(wildcard include/**/*.h) $(WINTER_HDRS)
@@ -21,13 +14,6 @@ HDRS := $(wildcard include/**/*.h) $(WINTER_HDRS)
 REL_OBJS  := $(SRCS:%.c=build/rel/%.o)
 DEB_OBJS  := $(SRCS:%.c=build/deb/%.o)
 TEST_OBJS := $(SRCS:%.c=build/test/%.o)
-
-LIBGIT2 := libgit2/build/libgit2.a
-
-$(LIBGIT2): libgit2/CMakeLists.txt
-	@mkdir -p libgit2/build 
-	cd libgit2/build && cmake .. -G "Unix Makefiles" -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Debug -DUSE_SSH=OFF
-	$(MAKE) -C libgit2/build libgit2package
 
 build/rel/%.o: %.c $(HDRS)
 	@mkdir -p $(dir $@)
@@ -41,17 +27,17 @@ build/test/%.o: %.c $(HDRS)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(WINTER_TEST_CFLAGS) -c -o $@ $<
 
-main: $(REL_OBJS) $(LIBGIT2) build/rel/src/main.o
-	$(CC) $(LD_FLAGS) $^ -o $@
+main: $(REL_OBJS) $(VENDOR_LIBS) build/rel/src/main.o
+	$(CC) $(VENDOR_LD_FLAGS) $^ -o $@
 
-debug: $(DEB_OBJS) $(LIBGIT2) build/deb/src/main.o
-	$(CC) $(LD_FLAGS) $(SANITIZER) $^ -o $@
+debug: $(DEB_OBJS) $(VENDOR_LIBS) build/deb/src/main.o
+	$(CC) $(VENDOR_LD_FLAGS) $(SANITIZER) $^ -o $@
 
-test: $(TEST_OBJS) $(LIBGIT2) build/test/src/test.o
-	$(CC) $(LD_FLAGS) $(SANITIZER) $^ -o $@
+test: $(TEST_OBJS) $(VENDOR_LIBS) build/test/src/test.o
+	$(CC) $(VENDOR_LD_FLAGS) $(SANITIZER) $^ -o $@
 
 clean:
-	rm -rf build test libgit2/build
+	rm -rf build test vendor/libgit2/build vendor/libssh2/build vendor/mbedtls/build
 
 format:
 	$(FORMAT) -i $(SRCS) $(HDRS)

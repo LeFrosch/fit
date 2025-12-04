@@ -2,5 +2,11 @@
 	path = winter
 	url = https://github.com/LeFrosch/winter.git
 [submodule "libgit2"]
-	path = libgit2
+	path = vendor/libgit2
 	url = https://github.com/libgit2/libgit2.git
+[submodule "vendor/libssh2"]
+	path = vendor/libssh2
+	url = https://github.com/libssh2/libssh2.git
+[submodule "vendor/mbedtls"]
+	path = vendor/mbedtls
+	url = https://github.com/Mbed-TLS/mbedtls.git

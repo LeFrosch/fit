@@ -8,21 +8,29 @@
 
 static result_t
 feature() {
-    git_libgit2_init();
-
     git_repository* repo;
-    try(fit_worktree(&repo));
-    defer(git_repository_free, repo);
+    try(fit_init(&repo));
+    defer(fit_shutdown, repo);
+
+    git_repository* worktree;
+    try(fit_worktree(repo, &worktree));
+    defer(git_repository_free, worktree);
 
     git_reference* main;
-    try(fit_branch_main(repo, &main));
+    try(fit_branch_main(worktree, &main));
     defer(git_reference_free, main);
 
     git_reference* branch;
-    try(fit_branch_new(repo, "pull", main, &branch));
+    try(fit_branch_new(worktree, "pull", main, &branch));
     defer(git_reference_free, branch);
 
-    try(fit_checkout(repo, branch));
+    try(fit_checkout(worktree, branch));
+
+    git_reference* commit;
+    try(git_repository_head(&commit, repo));
+    try(fit_cherry_pick(worktree, commit));
+
+    try(fit_push(worktree));
 
     return SUCCESS;
 }
